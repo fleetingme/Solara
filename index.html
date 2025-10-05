@@ -407,6 +407,104 @@
             animation: slideInUp 0.4s ease forwards;
         }
 
+        .search-result-item.album {
+            display: grid;
+            grid-template-columns: 70px 1fr auto;
+            gap: 18px;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .search-result-item.album::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(26, 188, 156, 0.12), transparent 55%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .search-result-item.album:hover::after {
+            opacity: 1;
+        }
+
+        .album-thumb {
+            width: 70px;
+            height: 70px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.45);
+            border: 1px solid rgba(26, 188, 156, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
+            position: relative;
+        }
+
+        .album-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .album-thumb i {
+            font-size: 28px;
+            color: var(--primary-color);
+        }
+
+        .search-result-item.album .search-result-info {
+            align-self: stretch;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .search-result-item.album .search-result-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-result-item.album .search-result-title i {
+            color: var(--primary-color);
+        }
+
+        .search-result-meta {
+            margin-top: 4px;
+            font-size: 12px;
+            color: var(--text-secondary-color);
+        }
+
+        .album-result-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .album-result-actions .action-btn {
+            min-width: 140px;
+        }
+
+        .album-result-actions .action-btn.secondary {
+            background: rgba(255, 255, 255, 0.45);
+            color: var(--primary-color);
+            border: 1px solid rgba(26, 188, 156, 0.25);
+        }
+
+        .album-result-actions .action-btn.secondary:hover {
+            background: var(--primary-color);
+            color: #fff;
+        }
+
+        .dark-mode .album-result-actions .action-btn.secondary {
+            background: rgba(30, 30, 30, 0.65);
+            color: #ecf0f1;
+            border-color: rgba(26, 188, 156, 0.35);
+        }
+
         .search-result-item:nth-child(1) { animation-delay: 0.1s; }
         .search-result-item:nth-child(2) { animation-delay: 0.15s; }
         .search-result-item:nth-child(3) { animation-delay: 0.2s; }
@@ -424,6 +522,10 @@
             background: var(--item-hover-bg);
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .search-result-item.album:hover {
+            transform: translateY(-4px);
         }
 
         .search-result-info {
@@ -1314,6 +1416,333 @@
             transform: scale(1) rotate(0deg);
         }
 
+        /* 专辑详情覆盖层 */
+        .album-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.35s ease;
+            z-index: 1200;
+        }
+
+        .album-overlay::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: var(--album-backdrop-image, none);
+            background-size: cover;
+            background-position: center;
+            filter: blur(120px);
+            opacity: 0.25;
+            transform: scale(1.1);
+            transition: opacity 0.35s ease;
+        }
+
+        .album-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .album-detail-panel {
+            position: relative;
+            width: min(860px, 95vw);
+            max-height: min(80vh, 700px);
+            background: rgba(255, 255, 255, 0.65);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.25);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            z-index: 1;
+            border: 1px solid rgba(26, 188, 156, 0.2);
+        }
+
+        .dark-mode .album-detail-panel {
+            background: rgba(30, 30, 30, 0.7);
+            border-color: rgba(26, 188, 156, 0.35);
+        }
+
+        .album-overlay-close {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            width: 40px;
+            height: 40px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: rgba(0, 0, 0, 0.25);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 2;
+        }
+
+        .album-overlay-close:hover {
+            transform: translateY(-2px);
+            background: var(--primary-color);
+            border-color: transparent;
+        }
+
+        .album-hero {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 28px;
+            align-items: center;
+        }
+
+        .album-hero-cover {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+            background: rgba(255,255,255,0.4);
+            border: 1px solid rgba(26, 188, 156, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .album-hero-cover.loading::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(130deg, rgba(255,255,255,0.1), rgba(255,255,255,0.35));
+            animation: shimmer 1.2s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .album-hero-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .album-hero-info {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .album-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            background: rgba(26, 188, 156, 0.18);
+            color: var(--primary-color);
+            font-weight: 600;
+            width: fit-content;
+            letter-spacing: 0.5px;
+        }
+
+        .album-hero-title {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        .album-hero-artist {
+            font-size: 1.1em;
+            color: var(--text-secondary-color);
+        }
+
+        .album-hero-meta {
+            font-size: 0.95em;
+            color: var(--text-secondary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .album-hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .album-hero-actions .action-btn {
+            font-size: 14px;
+            padding: 10px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .album-hero-actions .action-btn.secondary {
+            background: rgba(255,255,255,0.4);
+            color: var(--primary-color);
+            border: 1px solid rgba(26, 188, 156, 0.35);
+        }
+
+        .dark-mode .album-hero-actions .action-btn.secondary {
+            background: rgba(30, 30, 30, 0.6);
+            color: #ecf0f1;
+        }
+
+        .album-tracklist {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .album-tracklist::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .album-tracklist::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.2);
+            border-radius: 3px;
+        }
+
+        .dark-mode .album-tracklist::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.18);
+        }
+
+        .album-track-row {
+            display: grid;
+            grid-template-columns: 40px 1fr auto;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.55);
+            border-radius: 14px;
+            border: 1px solid rgba(26, 188, 156, 0.12);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .album-track-row:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+        }
+
+        .dark-mode .album-track-row {
+            background: rgba(30, 30, 30, 0.65);
+            border-color: rgba(26, 188, 156, 0.18);
+        }
+
+        .album-track-row.in-playlist {
+            border-color: var(--primary-color);
+            box-shadow: 0 12px 24px rgba(26,188,156,0.2);
+        }
+
+        .album-track-index {
+            font-weight: 600;
+            color: var(--text-secondary-color);
+            font-size: 0.95em;
+        }
+
+        .album-track-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .album-track-title {
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .album-track-artist {
+            font-size: 0.9em;
+            color: var(--text-secondary-color);
+        }
+
+        .album-track-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .album-track-actions .action-btn {
+            padding: 6px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            min-width: unset;
+        }
+
+        .album-track-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 0;
+            color: var(--text-secondary-color);
+            gap: 12px;
+        }
+
+        .album-track-loading .loader {
+            border-width: 3px;
+            width: 26px;
+            height: 26px;
+        }
+
+        .album-empty-placeholder {
+            padding: 40px 0;
+            text-align: center;
+            color: var(--text-secondary-color);
+        }
+
+        @media (max-width: 768px) {
+            .album-detail-panel {
+                padding: 24px 18px;
+                max-height: none;
+                height: 95vh;
+            }
+
+            .album-hero {
+                grid-template-columns: 1fr;
+                justify-items: center;
+                text-align: center;
+            }
+
+            .album-hero-cover {
+                width: 180px;
+                height: 180px;
+            }
+
+            .album-hero-info {
+                align-items: center;
+            }
+
+            .album-hero-actions {
+                justify-content: center;
+            }
+
+            .album-track-row {
+                grid-template-columns: 32px 1fr;
+                grid-template-rows: auto auto;
+                gap: 10px;
+            }
+
+            .album-track-actions {
+                grid-column: 1 / -1;
+                justify-content: center;
+            }
+        }
+
         /* 通知样式 */
         .notification {
             position: fixed;
@@ -1599,6 +2028,40 @@
     </div>
 </div>
 
+<div id="albumDetailOverlay" class="album-overlay" aria-hidden="true">
+    <div class="album-detail-panel" role="dialog" aria-modal="true" aria-labelledby="albumHeroTitle">
+        <button id="closeAlbumOverlay" class="album-overlay-close" type="button" aria-label="关闭专辑详情">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="album-hero">
+            <div class="album-hero-cover" id="albumHeroCover">
+                <div class="placeholder">
+                    <i class="fas fa-compact-disc"></i>
+                </div>
+            </div>
+            <div class="album-hero-info">
+                <span class="album-badge"><i class="fas fa-compact-disc"></i> 专辑</span>
+                <h2 class="album-hero-title" id="albumHeroTitle">精选专辑</h2>
+                <div class="album-hero-artist" id="albumHeroArtist">未知艺人</div>
+                <div class="album-hero-meta" id="albumHeroMeta"></div>
+                <div class="album-hero-actions">
+                    <button id="playAlbumBtn" class="action-btn play" type="button">
+                        <i class="fas fa-play"></i>
+                        播放整张专辑
+                    </button>
+                    <button id="addAlbumBtn" class="action-btn secondary" type="button">
+                        <i class="fas fa-plus"></i>
+                        添加到播放列表
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="album-tracklist" id="albumTrackList">
+            <div class="album-empty-placeholder">从搜索结果中选择一张专辑，体验沉浸式播放。</div>
+        </div>
+    </div>
+</div>
+
 <audio id="audioPlayer"></audio>
 
 <!-- 通知容器 -->
@@ -1640,6 +2103,15 @@
         qualityToggle: document.getElementById("qualityToggle"),
         playerQualityMenu: document.getElementById("playerQualityMenu"),
         qualityLabel: document.getElementById("qualityLabel"),
+        albumOverlay: document.getElementById("albumDetailOverlay"),
+        albumHeroCover: document.getElementById("albumHeroCover"),
+        albumHeroTitle: document.getElementById("albumHeroTitle"),
+        albumHeroArtist: document.getElementById("albumHeroArtist"),
+        albumHeroMeta: document.getElementById("albumHeroMeta"),
+        albumTrackList: document.getElementById("albumTrackList"),
+        closeAlbumOverlayBtn: document.getElementById("closeAlbumOverlay"),
+        playAlbumBtn: document.getElementById("playAlbumBtn"),
+        addAlbumBtn: document.getElementById("addAlbumBtn"),
     };
 
     function safeGetLocalStorage(key) {
@@ -1717,6 +2189,269 @@
     function normalizeSource(value) {
         const allowed = SOURCE_OPTIONS.map(option => option.value);
         return allowed.includes(value) ? value : SOURCE_OPTIONS[0].value;
+    }
+
+    function safeNormalizeSource(value) {
+        if (Array.isArray(value)) {
+            value = value[0];
+        }
+        if (!value) return SOURCE_OPTIONS[0].value;
+        const candidate = String(value).split(',')[0].trim();
+        return normalizeSource(candidate);
+    }
+
+    function normalizeArtists(value) {
+        const names = [];
+        const push = (name) => {
+            if (!name) return;
+            const trimmed = String(name).trim();
+            if (trimmed && !names.includes(trimmed)) {
+                names.push(trimmed);
+            }
+        };
+
+        const visit = (input) => {
+            if (!input) return;
+            if (Array.isArray(input)) {
+                input.forEach(item => visit(item));
+            } else if (typeof input === "string") {
+                input.split(/[,/&]|，|、|\s{2,}/).forEach(part => push(part));
+            } else if (typeof input === "object") {
+                const possible = [input.name, input.artist, input.nickname, input.title, input.alias];
+                possible.forEach(value => visit(value));
+            }
+        };
+
+        visit(value);
+        return names;
+    }
+
+    function extractCoverUrl(item) {
+        if (!item || typeof item !== "object") return null;
+        const candidates = [
+            item.cover,
+            item.coverUrl,
+            item.pic,
+            item.picUrl,
+            item.pic_url,
+            item.albumpic,
+            item.image,
+            item.albumPic,
+            item.album_cover,
+            item.albumCover,
+            item.img,
+        ];
+        return candidates.find(url => typeof url === "string" && url.startsWith("http")) || null;
+    }
+
+    function normalizeTrackData(track, albumMeta = {}) {
+        if (!track) return null;
+
+        const id = track.id ?? track.songid ?? track.songId ?? track.musicid ?? track.mid ?? track.rid ?? track.sid ?? track.hash;
+        const name = track.name ?? track.songname ?? track.songName ?? track.title ?? track.song ?? track.musicName;
+        if (!id || !name) return null;
+
+        const artists = normalizeArtists(
+            track.artist ?? track.artists ?? track.artistname ?? track.artistName ??
+            track.singer ?? track.singers ?? track.singername ?? track.singerName
+        );
+
+        const artistValue = (() => {
+            if (artists.length === 0) {
+                const albumArtist = albumMeta.artist;
+                if (Array.isArray(albumArtist)) {
+                    return albumArtist.length === 1 ? albumArtist[0] : albumArtist;
+                }
+                if (albumArtist) return albumArtist;
+                return "未知艺术家";
+            }
+            return artists.length === 1 ? artists[0] : artists;
+        })();
+
+        const albumName = track.album ?? track.albumname ?? track.albumName ?? track.al ?? albumMeta.name ?? albumMeta.album;
+        const lyricId = track.lyric_id ?? track.lyricId ?? track.lrc ?? track.lrcid ?? id;
+        const urlId = track.url_id ?? track.urlId ?? track.mid ?? track.hash ?? id;
+        const picId = track.pic_id ?? track.picId ?? track.album_pic ?? track.albumPic ?? track.al?.picId ?? albumMeta.pic_id ?? albumMeta.picId;
+        const source = safeNormalizeSource(track.source ?? track.platform ?? track.vendor ?? albumMeta.source ?? albumMeta.albumSource);
+
+        return {
+            type: "song",
+            id,
+            name,
+            artist: artistValue,
+            album: albumName,
+            pic_id: picId,
+            lyric_id: lyricId,
+            url_id: urlId,
+            source,
+        };
+    }
+
+    function extractAlbumYear(publishTime) {
+        if (!publishTime) return "";
+        let date;
+        if (typeof publishTime === "number") {
+            date = publishTime > 1e12 ? new Date(publishTime) : new Date(publishTime * 1000);
+        } else {
+            date = new Date(publishTime);
+        }
+        if (Number.isNaN(date.getTime())) return "";
+        return String(date.getFullYear());
+    }
+
+    function normalizeApiItem(item) {
+        if (!item) return null;
+
+        const itemType = (item.type || item.kind || item.category || "").toString().toLowerCase();
+        const albumPayload = item._album || (item.source === "_album" ? item : null) || (itemType === "album" ? item : null);
+
+        if (albumPayload) {
+            const albumData = albumPayload.album || albumPayload.data || albumPayload;
+            const albumId = albumData.id ?? albumData.album_id ?? albumData.albumId ?? albumData.mid ?? item.id;
+            const albumSource = safeNormalizeSource(albumData.source ?? albumData.platform ?? albumData.vendor ?? item.real_source ?? item.source);
+            const albumName = albumData.name ?? albumData.album ?? item.name ?? "未知专辑";
+            const albumArtists = normalizeArtists(albumData.artist ?? albumData.artists ?? albumData.artist_name ?? item.artist);
+            const artistValue = albumArtists.length === 0
+                ? (Array.isArray(item.artist) ? item.artist : item.artist || "未知艺术家")
+                : (albumArtists.length === 1 ? albumArtists[0] : albumArtists);
+            const albumPicId = albumData.pic_id ?? albumData.picId ?? albumData.pic ?? albumData.coverId ?? item.pic_id;
+            const coverUrl = extractCoverUrl(albumData) || extractCoverUrl(item);
+            const publishTime = albumData.publishTime ?? albumData.pubtime ?? albumData.publish_time ?? albumData.releaseDate ?? albumData.release_time;
+            const year = extractAlbumYear(publishTime);
+
+            const baseAlbumMeta = {
+                id: albumId,
+                name: albumName,
+                artist: artistValue,
+                pic_id: albumPicId,
+                source: albumSource,
+            };
+
+            const embeddedTracks = albumData.songs || albumData.tracks || albumData.list || item.songs;
+            const normalizedTracks = Array.isArray(embeddedTracks)
+                ? embeddedTracks.map(track => normalizeTrackData(track, baseAlbumMeta)).filter(Boolean)
+                : [];
+
+            const fallbackTrackCount = normalizedTracks.length;
+            const songCount = albumData.songCount
+                ?? albumData.trackCount
+                ?? albumData.size
+                ?? albumData.musicSize
+                ?? (fallbackTrackCount > 0 ? fallbackTrackCount : undefined);
+
+            return {
+                type: "album",
+                id: albumId,
+                albumId,
+                name: albumName,
+                artist: artistValue,
+                album: albumName,
+                source: albumSource,
+                albumSource,
+                pic_id: albumPicId,
+                coverUrl,
+                publishTime,
+                publishYear: year,
+                songCount,
+                tracks: normalizedTracks,
+                raw: item,
+            };
+        }
+
+        const id = item.id ?? item.songid ?? item.songId ?? item.musicid ?? item.rid ?? item.mid;
+        const name = item.name ?? item.title ?? item.songname ?? item.songName ?? item.musicName;
+        if (!id || !name) return null;
+
+        const artists = normalizeArtists(item.artist ?? item.artists ?? item.singer ?? item.singers ?? item.artistname ?? item.artistName);
+        const artistValue = artists.length === 0 ? (item.artist || "未知艺术家") : (artists.length === 1 ? artists[0] : artists);
+        const albumName = item.album ?? item.albumname ?? item.albumName;
+        const picId = item.pic_id ?? item.picId ?? item.pic ?? item.picUrl ?? item.coverId;
+        const lyricId = item.lyric_id ?? item.lyricId ?? item.lrc ?? id;
+        const urlId = item.url_id ?? item.urlId ?? item.mid ?? id;
+        const source = safeNormalizeSource(item.source ?? item.platform ?? item.vendor ?? item.channel);
+        const coverUrl = extractCoverUrl(item);
+
+        return {
+            type: "song",
+            id,
+            name,
+            artist: artistValue,
+            album: albumName,
+            pic_id: picId,
+            url_id: urlId,
+            lyric_id: lyricId,
+            source,
+            coverUrl,
+        };
+    }
+
+    function mergeAlbumMetadata(base, incoming = {}) {
+        const merged = { ...base };
+
+        if (incoming.name || incoming.album) {
+            merged.name = incoming.name || incoming.album;
+        }
+
+        const artistCandidates = incoming.artist ?? incoming.artists ?? incoming.artist_name;
+        const incomingArtists = normalizeArtists(artistCandidates);
+        if (incomingArtists.length > 0) {
+            merged.artist = incomingArtists.length === 1 ? incomingArtists[0] : incomingArtists;
+        }
+
+        const coverUrl = extractCoverUrl(incoming);
+        if (coverUrl) {
+            merged.coverUrl = coverUrl;
+        }
+
+        const picId = incoming.pic_id ?? incoming.picId ?? incoming.pic ?? incoming.coverId;
+        if (picId) {
+            merged.pic_id = picId;
+        }
+
+        const publishTime = incoming.publishTime ?? incoming.pubtime ?? incoming.publish_time ?? incoming.releaseDate ?? incoming.release_time;
+        if (publishTime) {
+            merged.publishTime = publishTime;
+            merged.publishYear = extractAlbumYear(publishTime);
+        }
+
+        const count = incoming.songCount ?? incoming.trackCount ?? incoming.size ?? incoming.musicSize;
+        const normalizedCount = Number(count);
+        if (Number.isFinite(normalizedCount) && normalizedCount > 0) {
+            merged.songCount = normalizedCount;
+        }
+
+        if (incoming.source || incoming.platform || incoming.vendor) {
+            merged.source = safeNormalizeSource(incoming.source ?? incoming.platform ?? incoming.vendor);
+            merged.albumSource = merged.source;
+        }
+
+        return merged;
+    }
+
+    function cloneSongData(song) {
+        if (!song) return null;
+        const cloned = { ...song };
+        if (Array.isArray(song.artist)) {
+            cloned.artist = [...song.artist];
+        }
+        if (song.tracks && Array.isArray(song.tracks)) {
+            cloned.tracks = song.tracks.map(track => cloneSongData(track)).filter(Boolean);
+        }
+        return cloned;
+    }
+
+    function dedupeTracks(tracks = []) {
+        const seen = new Set();
+        const result = [];
+        tracks.forEach(track => {
+            if (!track || !track.id) return;
+            const source = track.source || "netease";
+            const key = `${source}_${track.id}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            result.push(cloneSongData(track));
+        });
+        return result;
     }
 
     const QUALITY_OPTIONS = [
@@ -1825,18 +2560,22 @@
                 const data = await API.fetchJson(url);
                 debugLog(`API响应: ${JSON.stringify(data).substring(0, 200)}...`);
 
-                if (!Array.isArray(data)) throw new Error("搜索结果格式错误");
-                
-                return data.map(song => ({
-                    id: song.id,
-                    name: song.name,
-                    artist: song.artist,
-                    album: song.album,
-                    pic_id: song.pic_id,
-                    url_id: song.url_id,
-                    lyric_id: song.lyric_id,
-                    source: song.source,
-                }));
+                let list = [];
+                if (Array.isArray(data)) {
+                    list = data;
+                } else if (data && typeof data === "object") {
+                    if (Array.isArray(data.result)) {
+                        list = data.result;
+                    } else if (Array.isArray(data.data)) {
+                        list = data.data;
+                    } else if (Array.isArray(data.songs)) {
+                        list = data.songs;
+                    }
+                }
+
+                if (!Array.isArray(list)) throw new Error("搜索结果格式错误");
+
+                return list.map(normalizeApiItem).filter(Boolean);
             } catch (error) {
                 debugLog(`API错误: ${error.message}`);
                 throw error;
@@ -1850,21 +2589,88 @@
 
             try {
                 const data = await API.fetchJson(url);
-                if (!Array.isArray(data) || data.length === 0) throw new Error("No songs found");
-                return data.map(song => ({
-                    id: song.id,
-                    name: song.name,
-                    artist: song.artist, // 修复：使用正确的字段名
-                    source: song.source,
-                    lyric_id: song.lyric_id,
-                    pic_id: song.pic_id,
-                }));
+                let list = [];
+                if (Array.isArray(data)) {
+                    list = data;
+                } else if (data && typeof data === "object") {
+                    if (Array.isArray(data.result)) {
+                        list = data.result;
+                    } else if (Array.isArray(data.data)) {
+                        list = data.data;
+                    }
+                }
+
+                if (!Array.isArray(list) || list.length === 0) throw new Error("No songs found");
+                return list.map(normalizeApiItem).filter(Boolean);
             } catch (error) {
                 console.error("API request failed:", error);
                 throw error;
             }
         },
-        
+
+        getAlbumDetail: async (album) => {
+            if (!album) throw new Error("缺少专辑信息");
+            const albumId = album.albumId || album.id;
+            if (!albumId) throw new Error("缺少专辑ID");
+            const source = safeNormalizeSource(album.albumSource || album.source || state.searchSource || "netease");
+            const signature = API.generateSignature();
+            const url = `${API.baseUrl}?types=source_album&id=${albumId}&source=${source}&s=${signature}`;
+
+            const data = await API.fetchJson(url);
+
+            let tracksRaw = [];
+            let albumMeta = {};
+
+            if (Array.isArray(data)) {
+                tracksRaw = data;
+            } else if (data && typeof data === "object") {
+                if (Array.isArray(data.songs)) {
+                    tracksRaw = data.songs;
+                } else if (Array.isArray(data.tracks)) {
+                    tracksRaw = data.tracks;
+                } else if (Array.isArray(data.list)) {
+                    tracksRaw = data.list;
+                } else if (Array.isArray(data.data)) {
+                    tracksRaw = data.data;
+                } else if (Array.isArray(data.result)) {
+                    tracksRaw = data.result;
+                }
+
+                albumMeta = data.album || data.info || data.playlist || data.data?.album || {};
+            }
+
+            const mergedAlbum = mergeAlbumMetadata({
+                ...album,
+                albumSource: source,
+                source,
+            }, albumMeta);
+
+            const baseAlbumMeta = {
+                id: mergedAlbum.albumId || mergedAlbum.id,
+                name: mergedAlbum.name,
+                artist: mergedAlbum.artist,
+                pic_id: mergedAlbum.pic_id,
+                source,
+            };
+
+            const tracks = Array.isArray(tracksRaw)
+                ? tracksRaw.map(track => normalizeTrackData(track, baseAlbumMeta)).filter(Boolean)
+                : [];
+
+            if (!mergedAlbum.songCount) {
+                mergedAlbum.songCount = tracks.length;
+            }
+
+            if (!mergedAlbum.publishYear && mergedAlbum.publishTime) {
+                mergedAlbum.publishYear = extractAlbumYear(mergedAlbum.publishTime);
+            }
+
+            return {
+                album: mergedAlbum,
+                tracks,
+            };
+        },
+
         getSongUrl: (song, quality = "320") => {
             const signature = API.generateSignature();
             return `${API.baseUrl}?types=url&id=${song.id}&source=${song.source || "netease"}&br=${quality}&s=${signature}`;
@@ -1908,6 +2714,10 @@
         sourceMenuOpen: false,
         userScrolledLyrics: false, // 新增：用户是否手动滚动歌词
         lyricsScrollTimeout: null, // 新增：歌词滚动超时
+        activeAlbum: null,
+        activeAlbumTracks: [],
+        albumOverlayVisible: false,
+        albumLoading: false,
     };
 
     function savePlayerState() {
@@ -1984,6 +2794,9 @@
         }
         // 立即清空搜索结果内容
         dom.searchResults.innerHTML = "";
+        if (state.albumOverlayVisible) {
+            closeAlbumOverlay();
+        }
     }
 
     const playModeTexts = {
@@ -2553,6 +3366,23 @@
         dom.qualityToggle.addEventListener("click", togglePlayerQualityMenu);
         dom.playerQualityMenu.addEventListener("click", handlePlayerQualitySelection);
 
+        if (dom.closeAlbumOverlayBtn) {
+            dom.closeAlbumOverlayBtn.addEventListener("click", closeAlbumOverlay);
+        }
+        if (dom.playAlbumBtn) {
+            dom.playAlbumBtn.addEventListener("click", playActiveAlbum);
+        }
+        if (dom.addAlbumBtn) {
+            dom.addAlbumBtn.addEventListener("click", addActiveAlbumToPlaylist);
+        }
+        if (dom.albumOverlay) {
+            dom.albumOverlay.addEventListener("click", (event) => {
+                if (event.target === dom.albumOverlay) {
+                    closeAlbumOverlay();
+                }
+            });
+        }
+
         dom.loadOnlineBtn.addEventListener("click", exploreOnlineMusic);
 
         dom.showPlaylistBtn.addEventListener("click", () => switchMobileView("playlist"));
@@ -2582,15 +3412,20 @@
         // 修复：点击搜索区域外部时隐藏搜索结果
         document.addEventListener("click", (e) => {
             const searchArea = document.querySelector(".search-area");
-            if (searchArea && !searchArea.contains(e.target) && state.isSearchMode) {
+            if (searchArea && !searchArea.contains(e.target) && state.isSearchMode && !state.albumOverlayVisible) {
                 debugLog("点击搜索区域外部，隐藏搜索结果");
                 hideSearchResults();
             }
         });
 
         document.addEventListener("keydown", (e) => {
-            if (e.key === "Escape" && state.sourceMenuOpen) {
-                closeSourceMenu();
+            if (e.key === "Escape") {
+                if (state.sourceMenuOpen) {
+                    closeSourceMenu();
+                }
+                if (state.albumOverlayVisible) {
+                    closeAlbumOverlay();
+                }
             }
         });
         
@@ -2792,9 +3627,9 @@
             }
             
             state.hasMoreResults = results.length === 20;
-            
+
             // 显示搜索结果
-            displaySearchResults(state.searchResults);
+            renderSearchResults(state.searchResults);
             debugLog(`搜索完成: 总共显示 ${state.searchResults.length} 个结果`);
             
             // 如果没有结果，显示提示
@@ -2842,7 +3677,7 @@
             if (results.length > 0) {
                 state.searchResults = [...state.searchResults, ...results];
                 state.hasMoreResults = results.length === 20;
-                displaySearchResults(state.searchResults);
+                renderSearchResults(state.searchResults);
                 debugLog(`加载完成: 新增 ${results.length} 个结果`);
             } else {
                 state.hasMoreResults = false;
@@ -2861,36 +3696,71 @@
         }
     }
     
-    function displaySearchResults(results) {
+    function renderSearchResults(results) {
         dom.playlist.classList.remove("empty");
         if (results.length === 0) {
             dom.searchResults.innerHTML = "<div style=\"text-align: center; color: var(--text-secondary-color); padding: 20px;\">未找到相关歌曲</div>";
             return;
         }
         
-        const resultsHtml = results.map((song, index) => `
-            <div class="search-result-item" data-index="${index}">
-                <div class="search-result-info">
-                    <div class="search-result-title">${song.name}</div>
-                    <div class="search-result-artist">${Array.isArray(song.artist) ? song.artist.join(', ') : song.artist}${song.album ? " - " + song.album : ""}</div>
-                </div>
-                <div class="search-result-actions">
-                    <button class="action-btn play" onclick="playSearchResult(${index})" title="播放">
-                        <i class="fas fa-play"></i> 播放
-                    </button>
-                    <button class="action-btn download" onclick="showQualityMenu(event, ${index}, 'search')" title="下载">
-                        <i class="fas fa-download"></i>
-                        <div class="quality-menu">
-                            <div class="quality-option" onclick="downloadWithQuality(event, ${index}, 'search', '128')">标准音质 (128k)</div>
-                            <div class="quality-option" onclick="downloadWithQuality(event, ${index}, 'search', '192')">高音质 (192k)</div>
-                            <div class="quality-option" onclick="downloadWithQuality(event, ${index}, 'search', '320')">超高音质 (320k)</div>
-                            <div class="quality-option" onclick="downloadWithQuality(event, ${index}, 'search', '999')">无损音质</div>
+        const resultsHtml = results.map((item, index) => {
+            const artistText = Array.isArray(item.artist) ? item.artist.join(', ') : (item.artist || '未知艺术家');
+
+            if (item.type === "album") {
+                const coverUrl = item.coverUrl ? preferHttpsUrl(item.coverUrl) : null;
+                const songCount = item.songCount || (Array.isArray(item.tracks) ? item.tracks.length : 0);
+                const metaParts = [];
+                if (item.publishYear) metaParts.push(item.publishYear);
+                if (songCount) metaParts.push(`${songCount} 首曲目`);
+                const metaText = metaParts.join(' · ');
+
+                return `
+                    <div class="search-result-item album" data-index="${index}" data-type="album">
+                        <div class="album-thumb">
+                            ${coverUrl ? `<img src="${coverUrl}" alt="${item.name} 专辑封面">` : '<i class="fas fa-compact-disc"></i>'}
                         </div>
-                    </button>
+                        <div class="search-result-info">
+                            <div class="search-result-title"><i class="fas fa-compact-disc"></i> ${item.name}</div>
+                            <div class="search-result-artist">${artistText}</div>
+                            <div class="search-result-meta">${metaText || '专辑详情'}</div>
+                        </div>
+                        <div class="album-result-actions">
+                            <button class="action-btn play" onclick="openAlbumResult(${index})" title="查看专辑">
+                                <i class="fas fa-eye"></i> 查看专辑
+                            </button>
+                            <button class="action-btn secondary" onclick="addAlbumPreviewToPlaylist(${index})" title="添加到播放列表">
+                                <i class="fas fa-plus"></i> 快速添加
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const albumSuffix = item.album ? ` - ${item.album}` : "";
+            return `
+                <div class="search-result-item" data-index="${index}" data-type="song">
+                    <div class="search-result-info">
+                        <div class="search-result-title">${item.name}</div>
+                        <div class="search-result-artist">${artistText}${albumSuffix}</div>
+                    </div>
+                    <div class="search-result-actions">
+                        <button class="action-btn play" onclick="playSearchResult(${index})" title="播放">
+                            <i class="fas fa-play"></i> 播放
+                        </button>
+                        <button class="action-btn download" onclick="showQualityMenu(event, ${index}, 'search')" title="下载">
+                            <i class="fas fa-download"></i>
+                            <div class="quality-menu">
+                                <div class="quality-option" onclick="downloadWithQuality(event, ${index}, 'search', '128')">标准音质 (128k)</div>
+                                <div class="quality-option" onclick="downloadWithQuality(event, ${index}, 'search', '192')">高音质 (192k)</div>
+                                <div class="quality-option" onclick="downloadWithQuality(event, ${index}, 'search', '320')">超高音质 (320k)</div>
+                                <div class="quality-option" onclick="downloadWithQuality(event, ${index}, 'search', '999')">无损音质</div>
+                            </div>
+                        </button>
+                    </div>
                 </div>
-            </div>
-        `).join("");
-        
+            `;
+        }).join("");
+
         // 修复：改进加载更多按钮的生成和绑定
         const loadMoreHtml = state.hasMoreResults ? `
             <button id="loadMoreBtn" class="load-more-btn" onclick="loadMoreResults()">
@@ -2900,14 +3770,338 @@
         ` : "";
         
         dom.searchResults.innerHTML = resultsHtml + loadMoreHtml;
-        
+
         debugLog(`显示搜索结果: ${results.length} 个结果, 加载更多按钮: ${state.hasMoreResults ? "显示" : "隐藏"}`);
+    }
+
+    function showAlbumOverlay() {
+        if (!dom.albumOverlay) return;
+        dom.albumOverlay.classList.add("show");
+        dom.albumOverlay.setAttribute("aria-hidden", "false");
+        state.albumOverlayVisible = true;
+    }
+
+    function resetAlbumOverlayContent() {
+        if (dom.albumHeroCover) {
+            dom.albumHeroCover.innerHTML = `<div class="placeholder"><i class="fas fa-compact-disc"></i></div>`;
+            dom.albumHeroCover.classList.remove("loading");
+        }
+        if (dom.albumHeroTitle) {
+            dom.albumHeroTitle.textContent = "精选专辑";
+        }
+        if (dom.albumHeroArtist) {
+            dom.albumHeroArtist.textContent = "未知艺人";
+        }
+        if (dom.albumHeroMeta) {
+            dom.albumHeroMeta.textContent = "";
+        }
+        if (dom.albumTrackList) {
+            dom.albumTrackList.innerHTML = `<div class="album-empty-placeholder">从搜索结果中选择一张专辑，体验沉浸式播放。</div>`;
+        }
+        if (dom.albumOverlay) {
+            dom.albumOverlay.style.removeProperty("--album-backdrop-image");
+        }
+    }
+
+    function closeAlbumOverlay() {
+        if (!dom.albumOverlay) return;
+        dom.albumOverlay.classList.remove("show");
+        dom.albumOverlay.setAttribute("aria-hidden", "true");
+        state.albumOverlayVisible = false;
+        state.albumLoading = false;
+        state.activeAlbum = null;
+        state.activeAlbumTracks = [];
+        resetAlbumOverlayContent();
+    }
+
+    async function loadAlbumHeroCover(album) {
+        if (!dom.albumHeroCover) return;
+        const coverContainer = dom.albumHeroCover;
+        coverContainer.classList.add("loading");
+
+        let imageUrl = album.coverUrl ? preferHttpsUrl(album.coverUrl) : null;
+
+        if (!imageUrl && album.pic_id) {
+            try {
+                const picData = await API.fetchJson(API.getPicUrl(album));
+                if (picData && picData.url) {
+                    imageUrl = preferHttpsUrl(picData.url);
+                    album.coverUrl = imageUrl;
+                }
+            } catch (error) {
+                console.warn("获取专辑封面失败:", error);
+            }
+        }
+
+        coverContainer.classList.remove("loading");
+
+        if (imageUrl) {
+            coverContainer.innerHTML = `<img src="${imageUrl}" alt="${album.name || '专辑封面'}">`;
+            if (dom.albumOverlay) {
+                dom.albumOverlay.style.setProperty("--album-backdrop-image", `url('${imageUrl}')`);
+            }
+        } else {
+            coverContainer.innerHTML = `<div class="placeholder"><i class="fas fa-compact-disc"></i></div>`;
+            if (dom.albumOverlay) {
+                dom.albumOverlay.style.removeProperty("--album-backdrop-image");
+            }
+        }
+    }
+
+    async function updateAlbumHero(album, tracks = []) {
+        if (!album) return;
+        if (dom.albumHeroTitle) {
+            dom.albumHeroTitle.textContent = album.name || "精选专辑";
+        }
+        if (dom.albumHeroArtist) {
+            const artistText = Array.isArray(album.artist) ? album.artist.join(', ') : (album.artist || '未知艺人');
+            dom.albumHeroArtist.textContent = artistText;
+        }
+        if (dom.albumHeroMeta) {
+            const metaParts = [];
+            const trackCount = album.songCount || tracks.length;
+            if (album.publishYear) metaParts.push(album.publishYear);
+            if (trackCount) metaParts.push(`${trackCount} 首曲目`);
+            const source = album.albumSource || album.source;
+            if (source) metaParts.push(source.toUpperCase());
+            dom.albumHeroMeta.textContent = metaParts.join(' · ');
+        }
+        await loadAlbumHeroCover(album);
+    }
+
+    function renderAlbumTrackList(tracks = []) {
+        if (!dom.albumTrackList) return;
+        if (state.albumLoading) {
+            dom.albumTrackList.innerHTML = `<div class="album-track-loading"><span class="loader"></span><span>正在拉取专辑曲目...</span></div>`;
+            return;
+        }
+
+        if (!tracks || tracks.length === 0) {
+            dom.albumTrackList.innerHTML = `<div class="album-empty-placeholder">暂时无法获取专辑曲目</div>`;
+            return;
+        }
+
+        const rowsHtml = tracks.map((track, index) => {
+            const inPlaylist = state.playlistSongs.some(song => song.id === track.id && song.source === track.source);
+            const artistText = Array.isArray(track.artist) ? track.artist.join(', ') : (track.artist || '未知艺术家');
+            return `
+                <div class="album-track-row${inPlaylist ? ' in-playlist' : ''}" data-index="${index}">
+                    <div class="album-track-index">${index + 1}</div>
+                    <div class="album-track-info">
+                        <div class="album-track-title">${track.name}</div>
+                        <div class="album-track-artist">${artistText}</div>
+                    </div>
+                    <div class="album-track-actions">
+                        <button class="action-btn play" onclick="playAlbumTrack(${index})" title="播放这首歌">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button class="action-btn" onclick="addAlbumTrackToPlaylist(${index})" title="添加到播放列表">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join("");
+
+        dom.albumTrackList.innerHTML = rowsHtml;
+    }
+
+    async function openAlbumResult(index) {
+        const album = state.searchResults[index];
+        if (!album || album.type !== "album") return;
+
+        state.activeAlbum = cloneSongData(album);
+        state.activeAlbumTracks = dedupeTracks(album.tracks || []);
+        state.albumLoading = state.activeAlbumTracks.length === 0;
+
+        showAlbumOverlay();
+        await updateAlbumHero(state.activeAlbum, state.activeAlbumTracks);
+        renderAlbumTrackList(state.activeAlbumTracks);
+
+        if (!state.albumLoading) {
+            return;
+        }
+
+        try {
+            const detail = await API.getAlbumDetail(album);
+            const mergedAlbum = mergeAlbumMetadata({ ...state.activeAlbum }, detail.album || {});
+            mergedAlbum.type = "album";
+            mergedAlbum.albumId = mergedAlbum.albumId || mergedAlbum.id;
+            const tracks = dedupeTracks(detail.tracks || []);
+            mergedAlbum.tracks = tracks;
+            mergedAlbum.songCount = mergedAlbum.songCount || tracks.length;
+
+            state.activeAlbum = mergedAlbum;
+            state.activeAlbumTracks = tracks;
+            state.albumLoading = false;
+
+            state.searchResults[index] = mergedAlbum;
+            renderSearchResults(state.searchResults);
+
+            await updateAlbumHero(state.activeAlbum, state.activeAlbumTracks);
+            renderAlbumTrackList(state.activeAlbumTracks);
+        } catch (error) {
+            console.error("加载专辑详情失败:", error);
+            state.albumLoading = false;
+            renderAlbumTrackList(state.activeAlbumTracks);
+            showNotification("专辑详情加载失败，请稍后重试", "error");
+        }
+    }
+
+    async function addAlbumPreviewToPlaylist(index) {
+        const album = state.searchResults[index];
+        if (!album || album.type !== "album") return;
+
+        try {
+            let tracks = Array.isArray(album.tracks) && album.tracks.length > 0 ? album.tracks : null;
+            if (!tracks) {
+                const detail = await API.getAlbumDetail(album);
+                const mergedAlbum = mergeAlbumMetadata({ ...album }, detail.album || {});
+                mergedAlbum.type = "album";
+                mergedAlbum.albumId = mergedAlbum.albumId || mergedAlbum.id;
+                mergedAlbum.tracks = dedupeTracks(detail.tracks || []);
+                mergedAlbum.songCount = mergedAlbum.songCount || mergedAlbum.tracks.length;
+                state.searchResults[index] = mergedAlbum;
+                tracks = mergedAlbum.tracks;
+                renderSearchResults(state.searchResults);
+
+                if (state.activeAlbum && state.activeAlbum.id === mergedAlbum.id) {
+                    state.activeAlbum = mergedAlbum;
+                    state.activeAlbumTracks = mergedAlbum.tracks;
+                    renderAlbumTrackList(state.activeAlbumTracks);
+                }
+            }
+
+            if (!tracks || tracks.length === 0) {
+                showNotification("该专辑暂无可播放曲目", "warning");
+                return;
+            }
+
+            let added = 0;
+            tracks.forEach(track => {
+                if (!track) return;
+                const exists = state.playlistSongs.some(song => song.id === track.id && song.source === track.source);
+                if (exists) return;
+                state.playlistSongs.push(cloneSongData(track));
+                added++;
+            });
+
+            if (added > 0) {
+                renderPlaylist();
+                renderAlbumTrackList(state.activeAlbumTracks);
+                showNotification(`已添加专辑《${album.name}》的 ${added} 首曲目`, "success");
+            } else {
+                showNotification("专辑曲目已存在于播放列表", "warning");
+            }
+        } catch (error) {
+            console.error("添加专辑到播放列表失败:", error);
+            showNotification("添加失败，请稍后重试", "error");
+        }
+    }
+
+    async function playActiveAlbum() {
+        if (!state.activeAlbum) {
+            showNotification("请先选择一个专辑", "warning");
+            return;
+        }
+        if (state.albumLoading) {
+            showNotification("专辑曲目仍在加载中", "warning");
+            return;
+        }
+        if (!state.activeAlbumTracks || state.activeAlbumTracks.length === 0) {
+            showNotification("该专辑暂无可播放曲目", "warning");
+            return;
+        }
+
+        const tracks = dedupeTracks(state.activeAlbumTracks);
+        if (tracks.length === 0) {
+            showNotification("没有可播放的曲目", "warning");
+            return;
+        }
+
+        state.playlistSongs = tracks.map(track => cloneSongData(track));
+        state.currentTrackIndex = 0;
+        state.currentPlaylist = "playlist";
+        renderPlaylist();
+
+        const albumName = state.activeAlbum.name || "专辑";
+        closeAlbumOverlay();
+        await playPlaylistSong(0);
+        showNotification(`正在播放专辑《${albumName}》`, "success");
+    }
+
+    function addActiveAlbumToPlaylist() {
+        if (!state.activeAlbum) {
+            showNotification("请先打开一个专辑", "warning");
+            return;
+        }
+        if (state.albumLoading) {
+            showNotification("专辑曲目仍在加载中", "warning");
+            return;
+        }
+        if (!state.activeAlbumTracks || state.activeAlbumTracks.length === 0) {
+            showNotification("没有可添加的曲目", "warning");
+            return;
+        }
+
+        let added = 0;
+        state.activeAlbumTracks.forEach(track => {
+            if (!track) return;
+            const exists = state.playlistSongs.some(song => song.id === track.id && song.source === track.source);
+            if (exists) return;
+            state.playlistSongs.push(cloneSongData(track));
+            added++;
+        });
+
+        if (added > 0) {
+            renderPlaylist();
+            renderAlbumTrackList(state.activeAlbumTracks);
+            showNotification(`已将 ${added} 首曲目加入播放列表`, "success");
+        } else {
+            showNotification("这些曲目已经在播放列表中", "warning");
+        }
+    }
+
+    async function playAlbumTrack(index) {
+        if (state.albumLoading) return;
+        const track = state.activeAlbumTracks[index];
+        if (!track) return;
+
+        let targetIndex = state.playlistSongs.findIndex(song => song.id === track.id && song.source === track.source);
+        if (targetIndex === -1) {
+            state.playlistSongs.push(cloneSongData(track));
+            targetIndex = state.playlistSongs.length - 1;
+            renderPlaylist();
+        }
+
+        const trackName = track.name;
+        closeAlbumOverlay();
+        await playPlaylistSong(targetIndex);
+        showNotification(`正在播放: ${trackName}`);
+    }
+
+    function addAlbumTrackToPlaylist(index) {
+        if (state.albumLoading) return;
+        const track = state.activeAlbumTracks[index];
+        if (!track) return;
+
+        const exists = state.playlistSongs.some(song => song.id === track.id && song.source === track.source);
+        if (exists) {
+            showNotification("这首歌已在播放列表中", "warning");
+            renderAlbumTrackList(state.activeAlbumTracks);
+            return;
+        }
+
+        state.playlistSongs.push(cloneSongData(track));
+        renderPlaylist();
+        renderAlbumTrackList(state.activeAlbumTracks);
+        showNotification(`已添加到播放列表: ${track.name}`, "success");
     }
 
     // 显示质量选择菜单
     function showQualityMenu(event, index, type) {
         event.stopPropagation();
-        
+
         // 移除现有的质量菜单
         const existingMenu = document.querySelector(".dynamic-quality-menu");
         if (existingMenu) {
@@ -2960,7 +4154,12 @@
         }
         
         if (!song) return;
-        
+
+        if (song.type === "album") {
+            showNotification("请先打开专辑以选择具体曲目", "warning");
+            return;
+        }
+
         // 关闭菜单并移除 menu-active 类
         document.querySelectorAll(".quality-menu").forEach(menu => {
             menu.classList.remove("show");
@@ -2986,34 +4185,35 @@
     async function playSearchResult(index) {
         const song = state.searchResults[index];
         if (!song) return;
-        
+
+        if (song.type === "album") {
+            openAlbumResult(index);
+            return;
+        }
+
         try {
-            // 立即隐藏搜索结果，显示播放界面
             hideSearchResults();
             dom.searchInput.value = "";
-            
-            // 检查歌曲是否已在播放列表中
+
             const existingIndex = state.playlistSongs.findIndex(s => s.id === song.id && s.source === song.source);
-            
+            let targetSong;
+
             if (existingIndex !== -1) {
-                // 如果歌曲已存在，直接播放
                 state.currentTrackIndex = existingIndex;
                 state.currentPlaylist = "playlist";
+                targetSong = state.playlistSongs[existingIndex];
             } else {
-                // 如果歌曲不存在，添加到播放列表
-                state.playlistSongs.push(song);
+                targetSong = cloneSongData(song);
+                state.playlistSongs.push(targetSong);
                 state.currentTrackIndex = state.playlistSongs.length - 1;
                 state.currentPlaylist = "playlist";
+                renderPlaylist();
             }
-            
-            // 更新播放列表显示
-            renderPlaylist();
-            
-            // 播放歌曲
-            await playSong(song);
-            
-            showNotification(`正在播放: ${song.name}`);
-            
+
+            await playSong(targetSong);
+            updatePlaylistHighlight();
+            showNotification(`正在播放: ${targetSong.name}`);
+
         } catch (error) {
             console.error("播放失败:", error);
             showNotification("播放失败，请稍后重试", "error");
@@ -3108,6 +4308,9 @@
         }
 
         savePlayerState();
+        if (state.albumOverlayVisible) {
+            renderAlbumTrackList(state.activeAlbumTracks);
+        }
         showNotification("已从播放列表移除", "success");
     }
 
@@ -3144,6 +4347,9 @@
         state.currentPlaylist = "playlist";
 
         savePlayerState();
+        if (state.albumOverlayVisible) {
+            renderAlbumTrackList(state.activeAlbumTracks);
+        }
         showNotification("播放列表已清空", "success");
     }
 
@@ -3438,18 +4644,35 @@
             btnText.style.display = "none";
             loader.style.display = "inline-block";
             
-            const songs = await API.getList("热门", 50, 1);
-            
+            const results = await API.getList("热门", 50, 1);
+            const songs = results.filter(item => item && item.type !== "album");
+
             if (songs.length > 0) {
-                // 将在线音乐添加到统一播放列表
-                state.playlistSongs = [...state.playlistSongs, ...songs];
-                state.onlineSongs = songs; // 保留原有的在线音乐列表
-                
-                // 更新播放列表显示
-                renderPlaylist();
-                
-                showNotification(`已加载 ${songs.length} 首热门歌曲到播放列表`);
-                debugLog(`加载在线音乐成功: ${songs.length} 首歌曲`);
+                const existingKeys = new Set(state.playlistSongs.map(song => `${song.source || 'netease'}_${song.id}`));
+                const newSongs = songs.filter(song => {
+                    const key = `${song.source || 'netease'}_${song.id}`;
+                    if (existingKeys.has(key)) {
+                        return false;
+                    }
+                    existingKeys.add(key);
+                    return true;
+                }).map(song => cloneSongData(song));
+
+                if (newSongs.length > 0) {
+                    state.playlistSongs = [...state.playlistSongs, ...newSongs];
+                    renderPlaylist();
+                    if (state.albumOverlayVisible) {
+                        renderAlbumTrackList(state.activeAlbumTracks);
+                    }
+                }
+
+                state.onlineSongs = songs;
+
+                const message = newSongs.length > 0
+                    ? `已加载 ${newSongs.length} 首热门歌曲到播放列表`
+                    : "热门歌曲已全部存在于播放列表";
+                showNotification(message, newSongs.length > 0 ? "success" : "warning");
+                debugLog(`加载在线音乐成功: ${songs.length} 首歌曲，可添加 ${newSongs.length} 首`);
             } else {
                 showNotification("未找到在线音乐", "error");
             }
