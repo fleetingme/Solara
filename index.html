@@ -23,8 +23,12 @@
             const hasTouchSupport = ("maxTouchPoints" in navigator && navigator.maxTouchPoints > 0) ||
                 ("msMaxTouchPoints" in navigator && navigator.msMaxTouchPoints > 0) ||
                 ("ontouchstart" in window);
-            const isSmallScreen = typeof window.matchMedia === "function" && window.matchMedia("(max-width: 820px)").matches;
-            const isMobile = isMobileUA || (isSmallScreen && hasTouchSupport);
+            const matchMediaSupported = typeof window.matchMedia === "function";
+            const isSmallScreen = matchMediaSupported && window.matchMedia("(max-width: 820px)").matches;
+            const hasCoarsePointer = matchMediaSupported && window.matchMedia("(pointer: coarse)").matches;
+            const isPortraitScreen = matchMediaSupported && window.matchMedia("(orientation: portrait)").matches;
+            const fallbackLikelyMobile = !matchMediaSupported && hasTouchSupport;
+            const isMobile = isMobileUA || ((isSmallScreen || isPortraitScreen) && hasTouchSupport && hasCoarsePointer) || fallbackLikelyMobile;
             window.__SOLARA_IS_MOBILE = isMobile;
             if (!isMobile) {
                 return;
