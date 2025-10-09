@@ -125,6 +125,7 @@ body.mobile-view .cover-area {
     align-items: center;
     text-align: center;
     gap: clamp(16px, 4vw, 24px);
+    position: relative;
 }
 
 body.mobile-view .mobile-turntable {
@@ -190,8 +191,104 @@ body.mobile-view .album-cover .placeholder {
     color: rgba(255, 255, 255, 0.9);
 }
 
+body.mobile-view .mobile-inline-lyrics {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: min(78vw, 320px);
+    max-width: 100%;
+    height: min(78vw, 320px);
+    border-radius: 26px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    padding: 18px clamp(14px, 4vw, 20px);
+    gap: 12px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+body.mobile-view .mobile-inline-lyrics__hint {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.65);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+body.mobile-view .mobile-inline-lyrics__hint i {
+    font-size: 0.7rem;
+}
+
+body.mobile-view .mobile-inline-lyrics__scroll {
+    width: 100%;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 6px;
+    margin-right: -6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+body.mobile-view .mobile-inline-lyrics__content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+}
+
+body.mobile-view .mobile-inline-lyrics__content > div {
+    text-align: center;
+    font-size: clamp(0.8rem, 3.5vw, 0.95rem);
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+body.mobile-view .mobile-inline-lyrics__content div[data-index] {
+    text-align: center;
+    font-size: clamp(0.82rem, 3.8vw, 0.98rem);
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.75);
+    padding: 6px 10px;
+    border-radius: 14px;
+    transition: color 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease;
+    word-break: break-word;
+}
+
+body.mobile-view .mobile-inline-lyrics__content .current {
+    color: var(--lyrics-highlight-text, #f3a25b);
+    background: var(--lyrics-highlight-bg, rgba(243, 162, 91, 0.18));
+    box-shadow: 0 12px 32px var(--lyrics-highlight-shadow, rgba(243, 162, 91, 0.32));
+}
+
+body.mobile-view .mobile-inline-lyrics__scroll::-webkit-scrollbar {
+    width: 4px;
+}
+
+body.mobile-view .mobile-inline-lyrics__scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+}
+
 body.mobile-view.is-playing .mobile-turntable__platter {
     animation-play-state: running;
+}
+
+body.mobile-view.mobile-inline-lyrics-open .mobile-turntable {
+    display: none;
+}
+
+body.mobile-view.mobile-inline-lyrics-open .mobile-inline-lyrics {
+    display: flex;
+}
+
+body.mobile-view.mobile-inline-lyrics-open .mobile-inline-lyrics {
+    cursor: pointer;
 }
 
 @keyframes mobile-turntable-spin {

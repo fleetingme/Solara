@@ -8,6 +8,9 @@ const dom = {
     lyrics: document.getElementById("lyrics"),
     lyricsScroll: document.getElementById("lyricsScroll"),
     lyricsContent: document.getElementById("lyricsContent"),
+    mobileInlineLyrics: document.getElementById("mobileInlineLyrics"),
+    mobileInlineLyricsScroll: document.getElementById("mobileInlineLyricsScroll"),
+    mobileInlineLyricsContent: document.getElementById("mobileInlineLyricsContent"),
     audioPlayer: document.getElementById("audioPlayer"),
     themeToggleButton: document.getElementById("themeToggleButton"),
     loadOnlineBtn: document.getElementById("loadOnlineBtn"),
@@ -182,6 +185,86 @@ function closeAllMobileOverlays() {
         forceCloseMobilePanelOverlay();
     });
     return result;
+}
+
+function updateMobileInlineLyricsAria(isOpen) {
+    if (!dom.mobileInlineLyrics) {
+        return;
+    }
+    dom.mobileInlineLyrics.setAttribute("aria-hidden", isOpen ? "false" : "true");
+}
+
+function setMobileInlineLyricsOpen(isOpen) {
+    if (!isMobileView || !document.body || !dom.mobileInlineLyrics) {
+        return;
+    }
+    state.isMobileInlineLyricsOpen = Boolean(isOpen);
+    document.body.classList.toggle("mobile-inline-lyrics-open", Boolean(isOpen));
+    updateMobileInlineLyricsAria(Boolean(isOpen));
+}
+
+function hasInlineLyricsContent() {
+    const content = dom.mobileInlineLyricsContent;
+    if (!content) {
+        return false;
+    }
+    return content.textContent.trim().length > 0;
+}
+
+function canOpenMobileInlineLyrics() {
+    if (!isMobileView || !document.body) {
+        return false;
+    }
+    const hasSong = Boolean(state.currentSong);
+    return hasSong && hasInlineLyricsContent();
+}
+
+function closeMobileInlineLyrics(options = {}) {
+    if (!isMobileView || !document.body) {
+        return false;
+    }
+    if (!document.body.classList.contains("mobile-inline-lyrics-open")) {
+        updateMobileInlineLyricsAria(false);
+        state.isMobileInlineLyricsOpen = false;
+        return false;
+    }
+    setMobileInlineLyricsOpen(false);
+    if (options.force) {
+        state.userScrolledLyrics = false;
+    }
+    return true;
+}
+
+function openMobileInlineLyrics() {
+    if (!isMobileView || !document.body) {
+        return false;
+    }
+    if (!canOpenMobileInlineLyrics()) {
+        return false;
+    }
+    setMobileInlineLyricsOpen(true);
+    state.userScrolledLyrics = false;
+    window.requestAnimationFrame(() => {
+        const container = dom.mobileInlineLyricsScroll || dom.mobileInlineLyrics;
+        const activeLyric = dom.mobileInlineLyricsContent?.querySelector(".current") ||
+            dom.mobileInlineLyricsContent?.querySelector("div[data-index]");
+        if (container && activeLyric) {
+            scrollToCurrentLyric(activeLyric, container);
+        }
+    });
+    syncLyrics();
+    return true;
+}
+
+function toggleMobileInlineLyrics() {
+    if (!isMobileView || !document.body) {
+        return;
+    }
+    if (document.body.classList.contains("mobile-inline-lyrics-open")) {
+        closeMobileInlineLyrics();
+    } else {
+        openMobileInlineLyrics();
+    }
 }
 
 const PLACEHOLDER_HTML = `<div class="placeholder"><i class="fas fa-music"></i></div>`;
@@ -515,6 +598,7 @@ const state = {
     pendingPaletteReady: false,
     audioReadyForPalette: true,
     currentGradient: '',
+    isMobileInlineLyricsOpen: false,
 };
 
 let sourceMenuPositionFrame = null;
@@ -1813,6 +1897,23 @@ function setupInteractions() {
     }
     dom.playerQualityMenu.addEventListener("click", handlePlayerQualitySelection);
 
+    if (isMobileView && dom.albumCover) {
+        dom.albumCover.addEventListener("click", () => {
+            toggleMobileInlineLyrics();
+        });
+    }
+
+    if (isMobileView && dom.mobileInlineLyrics) {
+        dom.mobileInlineLyrics.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!state.isMobileInlineLyricsOpen) {
+                return;
+            }
+            closeMobileInlineLyrics();
+        });
+    }
+
     dom.loadOnlineBtn.addEventListener("click", exploreOnlineMusic);
     if (dom.mobileExploreButton) {
         dom.mobileExploreButton.addEventListener("click", (event) => {
@@ -1941,21 +2042,27 @@ function setupInteractions() {
     });
 
     // 新增：歌词滚动监听
-    if (dom.lyricsScroll) {
-        dom.lyricsScroll.addEventListener("scroll", () => {
+    const attachLyricScrollHandler = (scrollElement, getCurrentElement) => {
+        if (!scrollElement) {
+            return;
+        }
+        scrollElement.addEventListener("scroll", () => {
             state.userScrolledLyrics = true;
             clearTimeout(state.lyricsScrollTimeout);
-            // 3秒后恢复自动滚动并回位到当前歌词
             state.lyricsScrollTimeout = setTimeout(() => {
                 state.userScrolledLyrics = false;
-                // 立即滚动回当前歌词居中位置
-                const currentLyricElement = dom.lyricsContent?.querySelector(".current");
+                const currentLyricElement = typeof getCurrentElement === "function"
+                    ? getCurrentElement()
+                    : dom.lyricsContent?.querySelector(".current");
                 if (currentLyricElement) {
-                    scrollToCurrentLyric(currentLyricElement);
+                    scrollToCurrentLyric(currentLyricElement, scrollElement);
                 }
             }, 3000);
-        });
-    }
+        }, { passive: true });
+    };
+
+    attachLyricScrollHandler(dom.lyricsScroll, () => dom.lyricsContent?.querySelector(".current"));
+    attachLyricScrollHandler(dom.mobileInlineLyricsScroll, () => dom.mobileInlineLyricsContent?.querySelector(".current"));
 
     if (state.playlistSongs.length > 0) {
         let restoredIndex = state.currentTrackIndex;
@@ -2497,9 +2604,7 @@ function removeFromPlaylist(index) {
             updateMobileToolbarTitle();
             dom.currentSongArtist.textContent = "未知艺术家";
             showAlbumCoverPlaceholder();
-            if (dom.lyricsContent) {
-                dom.lyricsContent.innerHTML = "";
-            }
+            clearLyricsContent();
             if (dom.lyrics) {
                 dom.lyrics.dataset.placeholder = "default";
             }
@@ -2562,9 +2667,7 @@ function clearPlaylist() {
         updateMobileToolbarTitle();
         dom.currentSongArtist.textContent = "未知艺术家";
         showAlbumCoverPlaceholder();
-        if (dom.lyricsContent) {
-            dom.lyricsContent.innerHTML = "";
-        }
+        clearLyricsContent();
         if (dom.lyrics) {
             dom.lyrics.dataset.placeholder = "default";
         }
@@ -2972,21 +3075,19 @@ async function loadLyrics(song) {
             dom.lyrics.classList.remove("empty");
             dom.lyrics.dataset.placeholder = "default";
         } else {
-            if (dom.lyricsContent) {
-                dom.lyricsContent.innerHTML = "<div>暂无歌词</div>";
-            }
+            setLyricsContentHtml("<div>暂无歌词</div>");
             dom.lyrics.classList.add("empty");
             dom.lyrics.dataset.placeholder = "message";
             state.lyricsData = [];
+            state.currentLyricLine = -1;
         }
     } catch (error) {
         console.error("加载歌词失败:", error);
-        if (dom.lyricsContent) {
-            dom.lyricsContent.innerHTML = "<div>歌词加载失败</div>";
-        }
+        setLyricsContentHtml("<div>歌词加载失败</div>");
         dom.lyrics.classList.add("empty");
         dom.lyrics.dataset.placeholder = "message";
         state.lyricsData = [];
+        state.currentLyricLine = -1;
     }
 }
 
@@ -3014,16 +3115,35 @@ function parseLyrics(lyricText) {
     displayLyrics();
 }
 
+function setLyricsContentHtml(html) {
+    if (dom.lyricsContent) {
+        dom.lyricsContent.innerHTML = html;
+    }
+    if (dom.mobileInlineLyricsContent) {
+        dom.mobileInlineLyricsContent.innerHTML = html;
+    }
+}
+
+function clearLyricsContent() {
+    setLyricsContentHtml("");
+    state.lyricsData = [];
+    state.currentLyricLine = -1;
+    if (isMobileView) {
+        closeMobileInlineLyrics({ force: true });
+    }
+}
+
 // 修复：显示歌词
 function displayLyrics() {
     const lyricsHtml = state.lyricsData.map((lyric, index) =>
         `<div data-time="${lyric.time}" data-index="${index}">${lyric.text}</div>`
     ).join("");
-    if (dom.lyricsContent) {
-        dom.lyricsContent.innerHTML = lyricsHtml;
-    }
+    setLyricsContentHtml(lyricsHtml);
     if (dom.lyrics) {
         dom.lyrics.dataset.placeholder = "default";
+    }
+    if (state.isMobileInlineLyricsOpen) {
+        syncLyrics();
     }
 }
 
@@ -3045,24 +3165,43 @@ function syncLyrics() {
     if (currentIndex !== state.currentLyricLine) {
         state.currentLyricLine = currentIndex;
 
-        const lyricElements = dom.lyricsContent ? dom.lyricsContent.querySelectorAll("div[data-index]") : [];
-        lyricElements.forEach((element, index) => {
-            if (index === currentIndex) {
-                element.classList.add("current");
-                // 只有在用户没有手动滚动时才自动滚动
-                if (!state.userScrolledLyrics) {
-                    scrollToCurrentLyric(element);
+        const lyricTargets = [];
+        if (dom.lyricsContent) {
+            lyricTargets.push({
+                elements: dom.lyricsContent.querySelectorAll("div[data-index]"),
+                container: dom.lyricsScroll || dom.lyrics,
+            });
+        }
+        if (dom.mobileInlineLyricsContent) {
+            lyricTargets.push({
+                elements: dom.mobileInlineLyricsContent.querySelectorAll("div[data-index]"),
+                container: dom.mobileInlineLyricsScroll || dom.mobileInlineLyrics,
+                inline: true,
+            });
+        }
+
+        lyricTargets.forEach(({ elements, container, inline }) => {
+            elements.forEach((element, index) => {
+                if (index === currentIndex) {
+                    element.classList.add("current");
+                    const shouldScroll = !state.userScrolledLyrics && (!inline || state.isMobileInlineLyricsOpen);
+                    if (shouldScroll) {
+                        scrollToCurrentLyric(element, container);
+                    }
+                } else {
+                    element.classList.remove("current");
                 }
-            } else {
-                element.classList.remove("current");
-            }
+            });
         });
     }
 }
 
 // 新增：滚动到当前歌词 - 修复居中显示问题
-function scrollToCurrentLyric(element) {
-    const container = dom.lyricsScroll || dom.lyrics;
+function scrollToCurrentLyric(element, containerOverride) {
+    const container = containerOverride || dom.lyricsScroll || dom.lyrics;
+    if (!container || !element) {
+        return;
+    }
     const containerHeight = container.clientHeight;
     const elementRect = element.getBoundingClientRect();
     const containerRect = container.getBoundingClientRect();
@@ -3078,10 +3217,14 @@ function scrollToCurrentLyric(element) {
     const finalScrollTop = Math.max(0, Math.min(targetScrollTop, maxScrollTop));
 
     if (Math.abs(container.scrollTop - finalScrollTop) > 1) {
-        container.scrollTo({
-            top: finalScrollTop,
-            behavior: 'smooth'
-        });
+        if (typeof container.scrollTo === "function") {
+            container.scrollTo({
+                top: finalScrollTop,
+                behavior: 'smooth'
+            });
+        } else {
+            container.scrollTop = finalScrollTop;
+        }
     }
 
     debugLog(`歌词滚动: 元素在容器内偏移=${elementOffsetTop}, 容器高度=${containerHeight}, 目标滚动=${finalScrollTop}`);
