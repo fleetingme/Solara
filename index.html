@@ -19,9 +19,19 @@
     <script>
         (function () {
             const ua = navigator.userAgent || "";
+            const uaDataIsMobile = navigator.userAgentData && navigator.userAgentData.mobile === true;
+            const isExplicitDesktopUA = /windows|macintosh|linux/i.test(ua);
             const isMobileUA = /android|iphone|ipad|ipod|mobile|blackberry|phone|opera mini|windows phone/i.test(ua);
-            const isSmallScreen = typeof window.matchMedia === "function" && window.matchMedia("(max-width: 820px)").matches;
-            const isMobile = isMobileUA || isSmallScreen;
+            const hasTouchSupport = ("maxTouchPoints" in navigator && navigator.maxTouchPoints > 0) ||
+                ("msMaxTouchPoints" in navigator && navigator.msMaxTouchPoints > 0) ||
+                ("ontouchstart" in window);
+            const matchMediaSupported = typeof window.matchMedia === "function";
+            const isSmallScreen = matchMediaSupported && window.matchMedia("(max-width: 820px)").matches;
+            const hasCoarsePointer = matchMediaSupported && window.matchMedia("(pointer: coarse)").matches;
+            const isPortraitScreen = matchMediaSupported && window.matchMedia("(orientation: portrait)").matches;
+            const fallbackLikelyMobile = !matchMediaSupported && hasTouchSupport;
+            const computedMobileByLayout = (isSmallScreen || isPortraitScreen) && hasTouchSupport && hasCoarsePointer && !isExplicitDesktopUA;
+            const isMobile = Boolean(uaDataIsMobile || isMobileUA || computedMobileByLayout || fallbackLikelyMobile);
             window.__SOLARA_IS_MOBILE = isMobile;
             if (!isMobile) {
                 return;
@@ -118,6 +128,15 @@
                                 <i class="fas fa-music"></i>
                             </div>
                         </div>
+                    </div>
+                </div>
+                <div class="mobile-inline-lyrics" id="mobileInlineLyrics" aria-hidden="true">
+                    <div class="mobile-inline-lyrics__hint">
+                        <i class="fas fa-arrow-left"></i>
+                        轻触返回封面
+                    </div>
+                    <div class="mobile-inline-lyrics__scroll" id="mobileInlineLyricsScroll">
+                        <div class="mobile-inline-lyrics__content" id="mobileInlineLyricsContent"></div>
                     </div>
                 </div>
                 <div class="current-song-info">
