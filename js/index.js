@@ -34,7 +34,24 @@ const dom = {
     qualityToggle: document.getElementById("qualityToggle"),
     playerQualityMenu: document.getElementById("playerQualityMenu"),
     qualityLabel: document.getElementById("qualityLabel"),
+    mobileStatusBar: document.getElementById("mobileStatusBar"),
+    mobileClock: document.getElementById("mobileClock"),
+    mobileToolbarTitle: document.getElementById("mobileToolbarTitle"),
+    mobileSearchToggle: document.getElementById("mobileSearchToggle"),
+    mobileSearchClose: document.getElementById("mobileSearchClose"),
+    mobilePanelToggle: document.getElementById("mobilePanelToggle"),
+    mobilePanelClose: document.getElementById("mobilePanelClose"),
+    mobileOverlayScrim: document.getElementById("mobileOverlayScrim"),
+    mobileLyricsShortcut: document.getElementById("mobileLyricsShortcut"),
+    mobileBackButton: document.getElementById("mobileBackButton"),
+    mobileQualityBadge: document.getElementById("mobileQualityBadge"),
+    mobilePanel: document.getElementById("mobilePanel"),
+    mobilePanelTitle: document.getElementById("mobilePanelTitle"),
+    searchArea: document.getElementById("searchArea"),
 };
+
+const isMobileView = Boolean(window.__SOLARA_IS_MOBILE);
+let mobileClockTimer = null;
 
 const PLACEHOLDER_HTML = `<div class="placeholder"><i class="fas fa-music"></i></div>`;
 const paletteCache = new Map();
@@ -940,6 +957,9 @@ function updatePlayPauseButton() {
     const isPlaying = !dom.audioPlayer.paused && !dom.audioPlayer.ended;
     dom.playPauseBtn.innerHTML = `<i class="fas ${isPlaying ? "fa-pause" : "fa-play"}"></i>`;
     dom.playPauseBtn.title = isPlaying ? "暂停" : "播放";
+    if (document.body) {
+        document.body.classList.toggle("is-playing", isPlaying);
+    }
 }
 
 function updateProgressBarBackground(value = Number(dom.progressBar.value), max = Number(dom.progressBar.max)) {
@@ -1240,6 +1260,9 @@ function updateQualityLabel() {
     if (!option) return;
     dom.qualityLabel.textContent = option.label;
     dom.qualityToggle.title = `音质: ${option.label} (${option.description})`;
+    if (dom.mobileQualityBadge) {
+        dom.mobileQualityBadge.textContent = option.label;
+    }
 }
 
 function togglePlayerQualityMenu(event) {
@@ -1474,8 +1497,20 @@ function setupInteractions() {
 
     dom.loadOnlineBtn.addEventListener("click", exploreOnlineMusic);
 
-    dom.showPlaylistBtn.addEventListener("click", () => switchMobileView("playlist"));
-    dom.showLyricsBtn.addEventListener("click", () => switchMobileView("lyrics"));
+    dom.showPlaylistBtn.addEventListener("click", () => {
+        if (isMobileView) {
+            openMobilePanel("playlist");
+        } else {
+            switchMobileView("playlist");
+        }
+    });
+    dom.showLyricsBtn.addEventListener("click", () => {
+        if (isMobileView) {
+            openMobilePanel("lyrics");
+        } else {
+            switchMobileView("lyrics");
+        }
+    });
 
     // 播放模式按钮事件
     updatePlayModeUI();
@@ -1510,6 +1545,9 @@ function setupInteractions() {
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && state.sourceMenuOpen) {
             closeSourceMenu();
+        }
+        if (isMobileView && e.key === "Escape") {
+            closeAllMobileOverlays();
         }
     });
 
@@ -1615,6 +1653,10 @@ function setupInteractions() {
     if (state.currentSong) {
         restoreCurrentSongState();
     }
+
+    if (isMobileView) {
+        initializeMobileUI();
+    }
 }
 
 // 修复：更新当前歌曲信息和封面
@@ -1622,6 +1664,7 @@ function updateCurrentSongInfo(song, options = {}) {
     const { loadArtwork = true } = options;
     state.currentSong = song;
     dom.currentSongTitle.textContent = song.name;
+    updateMobileToolbarTitle();
 
     // 修复艺人名称显示问题 - 使用正确的字段名
     const artistText = Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '未知艺术家');
@@ -2110,6 +2153,7 @@ function removeFromPlaylist(index) {
             dom.durationDisplay.textContent = "00:00";
             updateProgressBarBackground(0, 1);
             dom.currentSongTitle.textContent = "选择一首歌曲开始播放";
+            updateMobileToolbarTitle();
             dom.currentSongArtist.textContent = "未知艺术家";
             showAlbumCoverPlaceholder();
             if (dom.lyricsContent) {
@@ -2173,6 +2217,7 @@ function clearPlaylist() {
         dom.durationDisplay.textContent = "00:00";
         updateProgressBarBackground(0, 1);
         dom.currentSongTitle.textContent = "选择一首歌曲开始播放";
+        updateMobileToolbarTitle();
         dom.currentSongArtist.textContent = "未知艺术家";
         showAlbumCoverPlaceholder();
         if (dom.lyricsContent) {
@@ -2750,6 +2795,157 @@ async function downloadSong(song, quality = "320") {
     }
 }
 
+function updateMobileClock() {
+    if (!isMobileView || !dom.mobileClock) {
+        return;
+    }
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    dom.mobileClock.textContent = `${hours}:${minutes}`;
+}
+
+function updateMobileToolbarTitle() {
+    if (!isMobileView || !dom.mobileToolbarTitle) {
+        return;
+    }
+    const titleText = dom.currentSongTitle ? dom.currentSongTitle.textContent.trim() : "";
+    dom.mobileToolbarTitle.textContent = titleText || "Solara";
+}
+
+function updateMobileOverlayScrim() {
+    if (!isMobileView || !dom.mobileOverlayScrim) {
+        return;
+    }
+    const hasOverlay = document.body.classList.contains("mobile-search-open") || document.body.classList.contains("mobile-panel-open");
+    dom.mobileOverlayScrim.setAttribute("aria-hidden", hasOverlay ? "false" : "true");
+}
+
+function openMobileSearch() {
+    if (!isMobileView || !document.body) return;
+    document.body.classList.add("mobile-search-open");
+    document.body.classList.remove("mobile-panel-open");
+    if (dom.searchArea) {
+        dom.searchArea.setAttribute("aria-hidden", "false");
+    }
+    updateMobileOverlayScrim();
+    if (dom.searchInput) {
+        window.requestAnimationFrame(() => {
+            try {
+                dom.searchInput.focus({ preventScroll: true });
+            } catch (error) {
+                dom.searchInput.focus();
+            }
+        });
+    }
+}
+
+function closeMobileSearch() {
+    if (!isMobileView || !document.body) return;
+    document.body.classList.remove("mobile-search-open");
+    if (dom.searchArea) {
+        dom.searchArea.setAttribute("aria-hidden", "true");
+    }
+    if (dom.searchInput) {
+        dom.searchInput.blur();
+    }
+    updateMobileOverlayScrim();
+}
+
+function toggleMobileSearch() {
+    if (!isMobileView || !document.body) return;
+    if (document.body.classList.contains("mobile-search-open")) {
+        closeMobileSearch();
+    } else {
+        openMobileSearch();
+    }
+}
+
+function openMobilePanel(view = "playlist") {
+    if (!isMobileView || !document.body) return;
+    switchMobileView(view);
+    document.body.classList.add("mobile-panel-open");
+    document.body.classList.remove("mobile-search-open");
+    if (dom.searchArea) {
+        dom.searchArea.setAttribute("aria-hidden", "true");
+    }
+    updateMobileOverlayScrim();
+}
+
+function closeMobilePanel() {
+    if (!isMobileView || !document.body) return;
+    document.body.classList.remove("mobile-panel-open");
+    updateMobileOverlayScrim();
+}
+
+function toggleMobilePanel(view = "playlist") {
+    if (!isMobileView || !document.body) return;
+    const isOpen = document.body.classList.contains("mobile-panel-open");
+    const currentView = document.body.getAttribute("data-mobile-panel-view") || "playlist";
+    if (isOpen && (!view || currentView === view)) {
+        closeMobilePanel();
+    } else {
+        openMobilePanel(view || currentView || "playlist");
+    }
+}
+
+function closeAllMobileOverlays() {
+    if (!isMobileView) return;
+    closeMobileSearch();
+    closeMobilePanel();
+}
+
+function initializeMobileUI() {
+    if (!isMobileView || !document.body) {
+        return;
+    }
+
+    document.body.classList.add("mobile-view");
+    const initialView = dom.lyrics && dom.lyrics.classList.contains("active") ? "lyrics" : "playlist";
+    document.body.setAttribute("data-mobile-panel-view", initialView);
+    if (dom.mobilePanelTitle) {
+        dom.mobilePanelTitle.textContent = initialView === "lyrics" ? "歌词" : "播放列表";
+    }
+    updateMobileToolbarTitle();
+    updateMobileClock();
+    if (mobileClockTimer !== null) {
+        window.clearInterval(mobileClockTimer);
+    }
+    mobileClockTimer = window.setInterval(updateMobileClock, 30000);
+
+    if (dom.mobileSearchToggle) {
+        dom.mobileSearchToggle.addEventListener("click", toggleMobileSearch);
+    }
+    if (dom.mobileSearchClose) {
+        dom.mobileSearchClose.addEventListener("click", closeMobileSearch);
+    }
+    if (dom.mobilePanelToggle) {
+        dom.mobilePanelToggle.addEventListener("click", () => toggleMobilePanel("playlist"));
+    }
+    if (dom.mobilePanelClose) {
+        dom.mobilePanelClose.addEventListener("click", closeMobilePanel);
+    }
+    if (dom.mobileOverlayScrim) {
+        dom.mobileOverlayScrim.addEventListener("click", closeAllMobileOverlays);
+    }
+    if (dom.mobileLyricsShortcut) {
+        dom.mobileLyricsShortcut.addEventListener("click", () => openMobilePanel("lyrics"));
+    }
+    if (dom.mobileBackButton) {
+        dom.mobileBackButton.addEventListener("click", closeAllMobileOverlays);
+    }
+
+    if (dom.searchArea) {
+        dom.searchArea.setAttribute("aria-hidden", "true");
+    }
+
+    if (dom.mobileOverlayScrim) {
+        dom.mobileOverlayScrim.setAttribute("aria-hidden", "true");
+    }
+
+    updateMobileOverlayScrim();
+}
+
 // 修复：移动端视图切换
 function switchMobileView(view) {
     if (view === "playlist") {
@@ -2762,6 +2958,12 @@ function switchMobileView(view) {
         dom.showPlaylistBtn.classList.remove("active");
         dom.lyrics.classList.add("active");
         dom.playlist.classList.remove("active");
+    }
+    if (isMobileView && document.body) {
+        document.body.setAttribute("data-mobile-panel-view", view);
+        if (dom.mobilePanelTitle) {
+            dom.mobilePanelTitle.textContent = view === "lyrics" ? "歌词" : "播放列表";
+        }
     }
 }
 
