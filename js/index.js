@@ -368,23 +368,49 @@ function preferHttpsUrl(url) {
     }
 }
 
-function buildAudioProxyUrl(url) {
-    if (!url || typeof url !== "string") return url;
+function requiresAudioProxy(hostname = "", source = "") {
+    const normalizedSource = String(source || "").toLowerCase();
+    if (["kuwo", "netease", "joox"].includes(normalizedSource)) {
+        return true;
+    }
+
+    const normalizedHost = String(hostname || "").toLowerCase();
+    const proxyDomains = [
+        "kuwo.cn",
+        "music.126.net",
+        "music.163.com",
+        "163.com",
+        "joox.com",
+        "jooxcdn.com",
+        "qqmusic.qq.com",
+        "stream.qqmusic.qq.com"
+    ];
+
+    return proxyDomains.some(domain =>
+        normalizedHost === domain || normalizedHost.endsWith(`.${domain}`)
+    );
+}
+
+function buildAudioProxyUrl(url, source = "") {
+    if (!url || typeof url !== "string") return null;
 
     try {
         const parsedUrl = new URL(url, window.location.href);
-        if (parsedUrl.protocol === "https:") {
-            return parsedUrl.toString();
+        const shouldProxy = parsedUrl.protocol === "http:" || requiresAudioProxy(parsedUrl.hostname, source);
+
+        if (!shouldProxy) {
+            return null;
         }
 
-        if (parsedUrl.protocol === "http:" && /(^|\.)kuwo\.cn$/i.test(parsedUrl.hostname)) {
-            return `${API.baseUrl}?target=${encodeURIComponent(parsedUrl.toString())}`;
+        const proxyUrl = new URL(API.baseUrl, window.location.origin);
+        proxyUrl.searchParams.set("target", parsedUrl.toString());
+        if (source) {
+            proxyUrl.searchParams.set("source", source);
         }
-
-        return parsedUrl.toString();
+        return proxyUrl.toString();
     } catch (error) {
         console.warn("无法解析音频地址，跳过代理", error);
-        return url;
+        return null;
     }
 }
 
@@ -2809,11 +2835,19 @@ async function playSong(song, options = {}) {
         }
 
         const originalAudioUrl = audioData.url;
-        const proxiedAudioUrl = buildAudioProxyUrl(originalAudioUrl);
+        const proxiedAudioUrl = buildAudioProxyUrl(originalAudioUrl, song.source);
         const preferredAudioUrl = preferHttpsUrl(originalAudioUrl);
-        const candidateAudioUrls = Array.from(
-            new Set([proxiedAudioUrl, preferredAudioUrl, originalAudioUrl].filter(Boolean))
-        );
+        const candidateAudioUrls = [];
+
+        if (proxiedAudioUrl) {
+            candidateAudioUrls.push(proxiedAudioUrl);
+        }
+        if (preferredAudioUrl && !candidateAudioUrls.includes(preferredAudioUrl)) {
+            candidateAudioUrls.push(preferredAudioUrl);
+        }
+        if (originalAudioUrl && !candidateAudioUrls.includes(originalAudioUrl)) {
+            candidateAudioUrls.push(originalAudioUrl);
+        }
 
         const primaryAudioUrl = candidateAudioUrls[0] || originalAudioUrl;
 
@@ -3281,16 +3315,17 @@ async function downloadSong(song, quality = "320") {
         const audioData = await API.fetchJson(audioUrl);
 
         if (audioData && audioData.url) {
-            const proxiedAudioUrl = buildAudioProxyUrl(audioData.url);
+            const proxiedAudioUrl = buildAudioProxyUrl(audioData.url, song.source);
             const preferredAudioUrl = preferHttpsUrl(audioData.url);
 
-            if (proxiedAudioUrl !== audioData.url) {
+            if (proxiedAudioUrl && proxiedAudioUrl !== audioData.url) {
                 debugLog(`下载链接已通过代理转换为 HTTPS: ${proxiedAudioUrl}`);
-            } else if (preferredAudioUrl !== audioData.url) {
+            } else if (preferredAudioUrl && preferredAudioUrl !== audioData.url) {
                 debugLog(`下载链接由 HTTP 升级为 HTTPS: ${preferredAudioUrl}`);
             }
 
-            const downloadUrl = proxiedAudioUrl || preferredAudioUrl || audioData.url;
+            const downloadCandidates = [proxiedAudioUrl, preferredAudioUrl, audioData.url];
+            const downloadUrl = downloadCandidates.find(candidate => typeof candidate === "string" && candidate.length > 0) || audioData.url;
 
             const link = document.createElement("a");
             link.href = downloadUrl;

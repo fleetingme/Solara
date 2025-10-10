@@ -1,5 +1,17 @@
 const API_BASE_URL = "https://music-api.gdstudio.xyz/api.php";
-const KUWO_HOST_PATTERN = /(^|\.)kuwo\.cn$/i;
+const AUDIO_REFERER_BY_SOURCE: Record<string, string> = {
+  kuwo: "https://www.kuwo.cn/",
+  netease: "https://music.163.com/",
+  joox: "https://www.joox.com/",
+};
+
+const AUDIO_HOST_WHITELIST: Record<string, RegExp[]> = {
+  kuwo: [/^(?:.+\.)?kuwo\.cn$/i],
+  netease: [/^(?:.+\.)?music\.126\.net$/i, /^(?:.+\.)?music\.163\.com$/i, /^(?:.+\.)?163\.com$/i],
+  joox: [/^(?:.+\.)?joox\.com$/i, /^(?:.+\.)?jooxcdn\.com$/i, /^(?:.+\.)?qqmusic\.qq\.com$/i, /^(?:.+\.)?stream\.qqmusic\.qq\.com$/i],
+};
+
+const DEFAULT_ALLOWED_HOSTS: RegExp[] = ([] as RegExp[]).concat(...Object.values(AUDIO_HOST_WHITELIST));
 const SAFE_RESPONSE_HEADERS = ["content-type", "cache-control", "accept-ranges", "content-length", "content-range", "etag", "last-modified", "expires"];
 
 function createCorsHeaders(init?: Headers): Headers {
@@ -30,56 +42,89 @@ function handleOptions(): Response {
   });
 }
 
-function isAllowedKuwoHost(hostname: string): boolean {
-  if (!hostname) return false;
-  return KUWO_HOST_PATTERN.test(hostname);
+function isAllowedAudioHost(hostname: string, source?: string | null): boolean {
+  if (!hostname) {
+    return false;
+  }
+
+  const normalizedSource = (source ?? "").toLowerCase();
+  const patterns = AUDIO_HOST_WHITELIST[normalizedSource] ?? DEFAULT_ALLOWED_HOSTS;
+  return patterns.some(pattern => pattern.test(hostname));
 }
 
-function normalizeKuwoUrl(rawUrl: string): URL | null {
+function normalizeTargetUrl(rawUrl: string): URL | null {
   try {
     const parsed = new URL(rawUrl);
-    if (!isAllowedKuwoHost(parsed.hostname)) {
-      return null;
-    }
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
       return null;
     }
-    parsed.protocol = "http:";
     return parsed;
   } catch {
     return null;
   }
 }
 
-async function proxyKuwoAudio(targetUrl: string, request: Request): Promise<Response> {
-  const normalized = normalizeKuwoUrl(targetUrl);
+function resolveAudioReferer(source: string | null, hostname: string): string | null {
+  const normalizedSource = (source ?? "").toLowerCase();
+  if (normalizedSource && AUDIO_REFERER_BY_SOURCE[normalizedSource]) {
+    return AUDIO_REFERER_BY_SOURCE[normalizedSource];
+  }
+
+  const matchedSource = Object.entries(AUDIO_HOST_WHITELIST).find(([, patterns]) =>
+    patterns.some(pattern => pattern.test(hostname))
+  );
+
+  if (!matchedSource) {
+    return null;
+  }
+
+  const [sourceKey] = matchedSource;
+  return AUDIO_REFERER_BY_SOURCE[sourceKey] ?? null;
+}
+
+async function proxyAudioRequest(targetUrl: string, source: string | null, request: Request): Promise<Response> {
+  const normalized = normalizeTargetUrl(targetUrl);
   if (!normalized) {
     return new Response("Invalid target", { status: 400 });
   }
 
-  const init: RequestInit = {
-    method: request.method,
-    headers: {
-      "User-Agent": request.headers.get("User-Agent") ?? "Mozilla/5.0",
-      "Referer": "https://www.kuwo.cn/",
-    },
+  if (!isAllowedAudioHost(normalized.hostname, source)) {
+    return new Response("Target host not allowed", { status: 403 });
+  }
+
+  const headers: Record<string, string> = {
+    "User-Agent": request.headers.get("User-Agent") ?? "Mozilla/5.0",
   };
+
+  const referer = resolveAudioReferer(source, normalized.hostname);
+  if (referer) {
+    headers["Referer"] = referer;
+    try {
+      headers["Origin"] = new URL(referer).origin;
+    } catch {
+      // ignore malformed referer origins
+    }
+  }
 
   const rangeHeader = request.headers.get("Range");
   if (rangeHeader) {
-    (init.headers as Record<string, string>)["Range"] = rangeHeader;
+    headers["Range"] = rangeHeader;
   }
 
-  const upstream = await fetch(normalized.toString(), init);
-  const headers = createCorsHeaders(upstream.headers);
-  if (!headers.has("Cache-Control")) {
-    headers.set("Cache-Control", "public, max-age=3600");
+  const upstream = await fetch(normalized.toString(), {
+    method: request.method,
+    headers,
+  });
+
+  const responseHeaders = createCorsHeaders(upstream.headers);
+  if (!responseHeaders.has("Cache-Control")) {
+    responseHeaders.set("Cache-Control", "public, max-age=3600");
   }
 
   return new Response(upstream.body, {
     status: upstream.status,
     statusText: upstream.statusText,
-    headers,
+    headers: responseHeaders,
   });
 }
 
@@ -126,9 +171,10 @@ export async function onRequest({ request }: { request: Request }): Promise<Resp
 
   const url = new URL(request.url);
   const target = url.searchParams.get("target");
+  const source = url.searchParams.get("source");
 
   if (target) {
-    return proxyKuwoAudio(target, request);
+    return proxyAudioRequest(target, source, request);
   }
 
   return proxyApiRequest(url, request);
